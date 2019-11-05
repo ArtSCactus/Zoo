@@ -26,6 +26,7 @@ public class Controller {
         database = new Storage();
     }
 
+
     public String getUrl() {
         return url;
     }
@@ -64,7 +65,15 @@ public class Controller {
         return database.executeRequest(request);
     }
 
-    public void executeQuery(String statementLine) throws SQLException {
-        database.executeQuery(statementLine);
+    public int executeUpdate(String statementLine) throws SQLException {
+       return database.executeUpdate(statementLine);
+    }
+
+    public ResultSet getCurrentLocalData(){
+        return database.getCurrentLocalData();
+    }
+
+    public String getLastRequest(){
+        return database.getLastRequest();
     }
 }
