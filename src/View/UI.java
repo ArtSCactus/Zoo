@@ -17,17 +17,25 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import model.entity.animals.Bird;
 import org.postgresql.util.PSQLException;
 import util.Controller;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 public class UI extends Application {
     private Controller controller;
     private BorderPane mainMenuInterface;
     private TableView<ObservableList> table;
-    private Accordion accordion;
+    private Accordion dataDisplayAccordion;
+    private TitledPane dataAddingPane;
+    private Stage mainStage;
 
     public UI() {
         controller = new Controller();
@@ -35,6 +43,7 @@ public class UI extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        mainStage=stage;
         try {
             controller.connect();
         } catch (PSQLException ex) {
@@ -48,7 +57,7 @@ public class UI extends Application {
             return;
         }
         //loginWindow(stage); - temporary disabled due to developing period
-        runMainWindow(stage);
+        runMainWindow();
     }
 
 
@@ -92,7 +101,7 @@ public class UI extends Application {
                 loginStage.close();
                 try {
                     if (controller.connect()) {
-                        runMainWindow(stage);
+                        runMainWindow();
                     }
                 } catch (SQLException | DriverNotFoundException e) {
                     exceptionWindow(e);
@@ -110,8 +119,8 @@ public class UI extends Application {
     private void buildMainMenu() {
         mainMenuInterface = new BorderPane();
         mainMenuInterface.setPadding(new Insets(0, 0, 0, 0));
-        buildAccordion();
-
+        buildDataDisplayAccordion();
+        buildDataAddingMenu();
         table = new TableView<>();
         table.setPrefWidth(550);
         table.setPrefHeight(350);
@@ -121,19 +130,30 @@ public class UI extends Application {
         Menu options = new Menu("Options");
         Menu view = new Menu("View");
         MenuItem changeUser = new MenuItem("Sign in");
-        CheckMenuItem showTextArea = new CheckMenuItem("Show data sets");
-        showTextArea.setOnAction(new EventHandler<ActionEvent>() {
+        CheckMenuItem showDataPresets = new CheckMenuItem("Show data presets");
+        showDataPresets.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                if (showTextArea.isSelected())
-                    mainMenuInterface.setRight(accordion);
-                else {
+                if (showDataPresets.isSelected()) {
+                    mainMenuInterface.setRight(dataDisplayAccordion);
+                }else {
                     mainMenuInterface.setRight(null);
                 }
             }
         });
+        CheckMenuItem showDataAddingMenu = new CheckMenuItem("Show data adding menu");
+        showDataAddingMenu.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                if (showDataAddingMenu.isSelected()){
+                    mainMenuInterface.setLeft(dataAddingPane);
+                } else {
+                    mainMenuInterface.setLeft(null);
+                }
+            }
+        });
         options.getItems().add(changeUser);
-        view.getItems().add(showTextArea);
+        view.getItems().addAll(showDataPresets, showDataAddingMenu);
         menuBar.getMenus().addAll(options, view);
         mainMenuInterface.setTop(menuBar);
         mainMenuInterface.setCenter(table);
@@ -141,10 +161,10 @@ public class UI extends Application {
     }
 
     /**
-     * Builds accordion.
+     * Builds accordion, that allows to choose current data, that showing in the table.
      */
-    private void buildAccordion() {
-        accordion = new Accordion();
+    private void buildDataDisplayAccordion() {
+        dataDisplayAccordion = new Accordion();
         TitledPane animalTitledPane = new TitledPane();
         animalTitledPane.setText("Animal");
 
@@ -175,20 +195,41 @@ public class UI extends Application {
         watcherTitledPane.setContent(watcherContent);
         TitledPane veterinarianTitledPane = new TitledPane();
         veterinarianTitledPane.setText("Veterinarians");
-        accordion.getPanes().addAll(animalTitledPane, watcherTitledPane, veterinarianTitledPane);
+        dataDisplayAccordion.getPanes().addAll(animalTitledPane, watcherTitledPane, veterinarianTitledPane);
+    }
+
+    /**
+     * Builds accordion, that allows to choose current data, that showing in the table.
+     */
+    private void buildDataAddingMenu() {
+        dataAddingPane = new TitledPane();
+        dataAddingPane.setText("Add new data");
+        // Content for TitledPane
+        VBox content = new VBox();
+        Button addBird = new Button();
+        addBird.setText("Bird");
+        addBird.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                //showMessage(Alert.AlertType.INFORMATION, "Тыгыдык тыгыдык","Тыгыдык");
+                showAddBirdDialog();
+            }
+        });
+        content.getChildren().add(addBird);
+        dataAddingPane.setContent(content);
+        dataAddingPane.setExpanded(true);
     }
 
     /**
      * Builds and runs main window (main part of program).
      *
-     * @param stage Stage on which will be shown main window
      * @see Stage
      */
-    private void runMainWindow(Stage stage) {
+    private void runMainWindow() {
         buildMainMenu();
         Scene scene = new Scene(mainMenuInterface, 700, 700);
-        stage.setScene(scene);
-        stage.show();
+        mainStage.setScene(scene);
+        mainStage.show();
     }
 
     /**
@@ -224,8 +265,11 @@ public class UI extends Application {
     /**
      * Shows exception in javaFX Alert window.
      * Creates alert window and setts:
+     * <p>
      * -on {@code setTitle()} shows {@code e.getClass()} ;
+     * <p>
      * -on {@code setHeaderText()} shows {@code e.getClass().toString()};
+     * <p>
      * -on {@code setContentText()} shows {@code e.getMessage}
      *
      * @param e an Exception or Exception class child object
@@ -288,16 +332,49 @@ public class UI extends Application {
                             param -> new SimpleStringProperty(param.getValue().get(j).toString()));
             col.setCellFactory(TextFieldTableCell.forTableColumn());
             col.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent>() {
-
                 @Override
                 public void handle(TableColumn.CellEditEvent event) {
                     try {
-                        String name = requestResult.getMetaData().getTableName(findColumnIndexInResultSet(requestResult, event.getTablePosition().getTableColumn()));
-                        controller.executeUpdate("update " +
-                                name + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
+                        String tableName = requestResult.getMetaData().getTableName(findColumnIndexInResultSet(requestResult,
+                                event.getTablePosition().getTableColumn()));
+                        //Watching how much rows can be affected by editing this cell (getting this rows)
+                        ResultSet current = controller.executeScrollableAnonymousRequest("select * from "+tableName+
+                                " where "+col.getText()+" = \'"+event.getOldValue()+"\'");
+                        current.last();
+                        //counting it
+                        int rowAmount = current.getRow();
+                        //Checking, if such same cells more, than 1, showing choose dialog
+                       if (current.getRow()>1){
+                           //Creating list with uniques codes of possible affected cells
+                            List<String> codes = new ArrayList<>();
+                           current.first();
+                           //adding first element, because it was skipped
+                           codes.add(current.getString(1));
+                           //filling codes list
+                           while(current.next()){
+                                codes.add(current.getString(1));
+                            }
+                           //Watching what user had chose
+                           String selectedCode =showConflictDialog(codes, rowAmount);
+                           if (selectedCode==null){
+                               updateTable(table, controller.getCurrentLocalData());
+                               return;
+                           } else {
+                               //Executing custom update request to change only 1 cell
+                               controller.executeUpdate("update " +
+                                       tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
+                                       " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\' and " +
+                                       current.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");
+                               updateTable(table,controller.getLastRequest());
+                           }
+                        } else {
+                           //Executing update for all founded matches
+                       controller.executeUpdate("update " +
+                                tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
                                 " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\';");
+                           updateTable(table, controller.getLastRequest());
+                       }
                         //Adding data from sql request to ObservableList
-                        updateTable(table, controller.getLastRequest());
                     } catch (SQLException e) {
                         exceptionWindow(e);
                     }
@@ -344,9 +421,30 @@ public class UI extends Application {
         table.setItems(data);
     }
 
-    private void updateTable(TableView table, ResultSet dataSet) {
+    private void updateTable(TableView table) {
         ObservableList<ObservableList> data = FXCollections.observableArrayList();
         table.getItems().clear();
+        try {
+            ResultSet dataSet = controller.executeRequest(controller.getLastRequest());
+            while (dataSet.next()) {
+                //Iterate Row
+                ObservableList<String> row = FXCollections.observableArrayList();
+                for (int i = 1; i <= dataSet.getMetaData().getColumnCount(); i++) {
+                    //Iterate Column
+                    row.add(dataSet.getString(i));
+                }
+                data.add(row);
+            }
+        } catch (SQLException e) {
+            exceptionWindow(e);
+        }
+        table.setItems(data);
+    }
+
+    private void updateTable(TableView table, ResultSet localData) {
+        ObservableList<ObservableList> data = FXCollections.observableArrayList();
+        table.getItems().clear();
+        ResultSet dataSet = localData;
         try {
             while (dataSet.next()) {
                 //Iterate Row
@@ -362,4 +460,69 @@ public class UI extends Application {
         }
         table.setItems(data);
     }
+
+   private Bird showAddBirdDialog(){
+        Stage addBirdStage = new Stage();
+        GridPane gridPane = new GridPane();
+        gridPane.setPadding(new Insets(20));
+
+        TextField birdNumber = new TextField();
+        birdNumber.setPromptText("Bird number");
+        gridPane.add(birdNumber,0,0);
+
+        TextField birdName = new TextField();
+        birdName.setPromptText("Bird name");
+        gridPane.add(birdName, 0,1);
+
+        DatePicker birthdayDate = new DatePicker();
+        birthdayDate.setValue(LocalDate.now());
+        birthdayDate.setPromptText("Bird birthday date");
+        gridPane.add(birthdayDate,0,2);
+
+        Scene addBirdScene = new Scene(gridPane, 300,300);
+        addBirdStage.setScene(addBirdScene);
+        addBirdStage.show();
+        return null;
+    }
+
+    /**Counts amount of row in result set.
+     *
+     * @param resultSet
+     * @return
+     */
+    private int countResultSetRows(ResultSet resultSet){
+        try{
+            resultSet.last();
+            return resultSet.getRow();
+        } catch (SQLException e) {
+            exceptionWindow(e);
+        } finally{
+            try {
+                resultSet.moveToCurrentRow();
+            } catch (SQLException e) {
+                exceptionWindow(e);
+            }
+        }
+        return 0;
+    }
+
+    /**Shows dialog, that informing user about conflict while data editing.
+     *
+     * This dialog should be used to show user, that changing 1 cell can affect to all same cells.
+     * Dialog allows user to set cell number, tht he want to change (if only one).
+     *
+     * @param codes  List, that contains unique codes of elements, that can be changed
+     * @param rowAmount Amount of rows, that potential would be affected.
+     * @return String {@code getSelectedItem()}
+     */
+    private String showConflictDialog(List<String> codes, int rowAmount){
+         ChoiceDialog<String> dialog = new ChoiceDialog<>();
+        dialog.setTitle("Possible conflict");
+        dialog.setHeaderText("Changing of this cell can affect on "+rowAmount+" rows");
+        dialog.setContentText("Please, choose code number of element, that you want to change");
+        dialog.getItems().addAll(codes);
+        dialog.showAndWait();
+        return dialog.getSelectedItem();
+    }
+
 }

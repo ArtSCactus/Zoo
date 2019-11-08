@@ -76,4 +76,11 @@ public class Controller {
     public String getLastRequest(){
         return database.getLastRequest();
     }
+    public ResultSet executeAnonymousRequest(String statementRow) throws SQLException {
+        return database.executeAnonymousRequest(statementRow);
+    }
+    public ResultSet executeScrollableAnonymousRequest(String statementRow) throws SQLException {
+        return database.executeAnonymousRequest_SCROLLABLE(statementRow);
+    }
+
 }
