@@ -48,10 +48,6 @@ public class Storage {
         }
     }
 
-    /*public static ArrayList resultSetAsArrayList(ResultSet requestResult){
-
-    }*/
-
     public void connect(String url, String username, String password) throws SQLException, DriverNotFoundException {
         checkDriver();
         connection = DriverManager.getConnection(url, username, password);
@@ -115,28 +111,22 @@ public class Storage {
         }
     }
 
-    /**Executes request, without saving last ResultSet and statementRow.
+    /**
+     * Executes request, without saving last ResultSet and statementRow.
      *
      * @param statementRow sql request
      * @return ResultSet
      * @throws SQLException
      */
     public ResultSet executeAnonymousRequest(String statementRow) throws SQLException {
-        if (statementRow==null){
+        if (statementRow == null) {
             throw new NullPointerException("Cannot execute null statement");
         }
-        if (connection.isClosed()){
+        if (connection.isClosed()) {
             // here will be DatabaseConnectionException
         }
         Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
                 ResultSet.CONCUR_UPDATABLE);
-            return statement.executeQuery(statementRow);
-    }
-
-    public ResultSet executeAnonymousRequest_SCROLLABLE(String statementRow) throws SQLException {
-        Statement statement = connection.createStatement(  ResultSet.TYPE_SCROLL_SENSITIVE,
-                ResultSet.CONCUR_UPDATABLE);
         return statement.executeQuery(statementRow);
     }
-
 }
