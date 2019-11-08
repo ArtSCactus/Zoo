@@ -43,7 +43,7 @@ public class UI extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        mainStage=stage;
+        mainStage = stage;
         try {
             controller.connect();
         } catch (PSQLException ex) {
@@ -136,7 +136,7 @@ public class UI extends Application {
             public void handle(ActionEvent event) {
                 if (showDataPresets.isSelected()) {
                     mainMenuInterface.setRight(dataDisplayAccordion);
-                }else {
+                } else {
                     mainMenuInterface.setRight(null);
                 }
             }
@@ -145,7 +145,7 @@ public class UI extends Application {
         showDataAddingMenu.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                if (showDataAddingMenu.isSelected()){
+                if (showDataAddingMenu.isSelected()) {
                     mainMenuInterface.setLeft(dataAddingPane);
                 } else {
                     mainMenuInterface.setLeft(null);
@@ -211,7 +211,6 @@ public class UI extends Application {
         addBird.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                //showMessage(Alert.AlertType.INFORMATION, "Тыгыдык тыгыдык","Тыгыдык");
                 showAddBirdDialog();
             }
         });
@@ -338,42 +337,39 @@ public class UI extends Application {
                         String tableName = requestResult.getMetaData().getTableName(findColumnIndexInResultSet(requestResult,
                                 event.getTablePosition().getTableColumn()));
                         //Watching how much rows can be affected by editing this cell (getting this rows)
-                        ResultSet current = controller.executeScrollableAnonymousRequest("select * from "+tableName+
-                                " where "+col.getText()+" = \'"+event.getOldValue()+"\'");
-                        current.last();
+                        ResultSet anonymousSet = controller.executeScrollableAnonymousRequest("select * from " + tableName +
+                                " where " + col.getText() + " = \'" + event.getOldValue() + "\'");
+                        anonymousSet.last();
                         //counting it
-                        int rowAmount = current.getRow();
+                        int rowAmount = anonymousSet.getRow();
                         //Checking, if such same cells more, than 1, showing choose dialog
-                       if (current.getRow()>1){
-                           //Creating list with uniques codes of possible affected cells
+                        if (anonymousSet.getRow() > 1) {
+                            //Creating list with uniques codes of possible affected cells
                             List<String> codes = new ArrayList<>();
-                           current.first();
-                           //adding first element, because it was skipped
-                           codes.add(current.getString(1));
-                           //filling codes list
-                           while(current.next()){
-                                codes.add(current.getString(1));
+                            anonymousSet.first();
+                            //filling codes list
+                             do {
+                                codes.add(anonymousSet.getString(1));
+                            }while (anonymousSet.next());
+                            //Watching what user had chose
+                            String selectedCode = showConflictDialog(codes, rowAmount);
+                            if (selectedCode == null) {
+                                updateTable(table, controller.getCurrentLocalData());
+                            } else {
+                                //Executing custom update request to change only 1 cell
+                                controller.executeUpdate("update " +
+                                        tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
+                                        " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\' and " +
+                                        anonymousSet.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");
+                                updateTable(table, controller.getLastRequest());
                             }
-                           //Watching what user had chose
-                           String selectedCode =showConflictDialog(codes, rowAmount);
-                           if (selectedCode==null){
-                               updateTable(table, controller.getCurrentLocalData());
-                               return;
-                           } else {
-                               //Executing custom update request to change only 1 cell
-                               controller.executeUpdate("update " +
-                                       tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
-                                       " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\' and " +
-                                       current.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");
-                               updateTable(table,controller.getLastRequest());
-                           }
                         } else {
-                           //Executing update for all founded matches
-                       controller.executeUpdate("update " +
-                                tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
-                                " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\';");
-                           updateTable(table, controller.getLastRequest());
-                       }
+                            //Executing update for all founded matches
+                            controller.executeUpdate("update " +
+                                    tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
+                                    " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\';");
+                            updateTable(table, controller.getLastRequest());
+                        }
                         //Adding data from sql request to ObservableList
                     } catch (SQLException e) {
                         exceptionWindow(e);
@@ -406,7 +402,7 @@ public class UI extends Application {
         ObservableList<ObservableList> data = FXCollections.observableArrayList();
         table.getItems().clear();
         try {
-            while (newSet.next()) {
+            do {
                 //Iterate Row
                 ObservableList<String> row = FXCollections.observableArrayList();
                 for (int i = 1; i <= newSet.getMetaData().getColumnCount(); i++) {
@@ -414,7 +410,7 @@ public class UI extends Application {
                     row.add(newSet.getString(i));
                 }
                 data.add(row);
-            }
+            }while (newSet.next());
         } catch (SQLException e) {
             exceptionWindow(e);
         }
@@ -426,7 +422,7 @@ public class UI extends Application {
         table.getItems().clear();
         try {
             ResultSet dataSet = controller.executeRequest(controller.getLastRequest());
-            while (dataSet.next()) {
+           do {
                 //Iterate Row
                 ObservableList<String> row = FXCollections.observableArrayList();
                 for (int i = 1; i <= dataSet.getMetaData().getColumnCount(); i++) {
@@ -434,69 +430,82 @@ public class UI extends Application {
                     row.add(dataSet.getString(i));
                 }
                 data.add(row);
-            }
+            }while (dataSet.next());
         } catch (SQLException e) {
             exceptionWindow(e);
         }
         table.setItems(data);
     }
 
-    private void updateTable(TableView table, ResultSet localData) {
+    /**
+     * Refills table from given request.
+     * <p>
+     * In process calling method {@code dataSet.first()}
+     *
+     * @param table   TableView where this result set will be shown
+     * @param dataSet ResultSet object
+     */
+    private void updateTable(TableView table, ResultSet dataSet) {
         ObservableList<ObservableList> data = FXCollections.observableArrayList();
         table.getItems().clear();
-        ResultSet dataSet = localData;
         try {
-            while (dataSet.next()) {
+            ObservableList<String> row = FXCollections.observableArrayList();
+            //Possible given ResultSet already was used, and cursor is outside of rows border. Then we need to
+            // set cursor to the first row.
+            dataSet.first();
+           do  {
                 //Iterate Row
-                ObservableList<String> row = FXCollections.observableArrayList();
+                row = FXCollections.observableArrayList();
                 for (int i = 1; i <= dataSet.getMetaData().getColumnCount(); i++) {
                     //Iterate Column
                     row.add(dataSet.getString(i));
                 }
                 data.add(row);
-            }
+            }while (dataSet.next()); // do {} while() because if we would use just while(){}, we would lost first
+            //row because of calling method dataSet.next();
         } catch (SQLException e) {
             exceptionWindow(e);
         }
         table.setItems(data);
     }
 
-   private Bird showAddBirdDialog(){
+    private Bird showAddBirdDialog() {
         Stage addBirdStage = new Stage();
         GridPane gridPane = new GridPane();
         gridPane.setPadding(new Insets(20));
 
         TextField birdNumber = new TextField();
         birdNumber.setPromptText("Bird number");
-        gridPane.add(birdNumber,0,0);
+        gridPane.add(birdNumber, 0, 0);
 
         TextField birdName = new TextField();
         birdName.setPromptText("Bird name");
-        gridPane.add(birdName, 0,1);
+        gridPane.add(birdName, 0, 1);
 
         DatePicker birthdayDate = new DatePicker();
         birthdayDate.setValue(LocalDate.now());
         birthdayDate.setPromptText("Bird birthday date");
-        gridPane.add(birthdayDate,0,2);
+        gridPane.add(birthdayDate, 0, 2);
 
-        Scene addBirdScene = new Scene(gridPane, 300,300);
+        Scene addBirdScene = new Scene(gridPane, 300, 300);
         addBirdStage.setScene(addBirdScene);
         addBirdStage.show();
         return null;
     }
 
-    /**Counts amount of row in result set.
+    /**
+     * Counts amount of row in result set.
      *
      * @param resultSet
      * @return
      */
-    private int countResultSetRows(ResultSet resultSet){
-        try{
+    private int countResultSetRows(ResultSet resultSet) {
+        try {
             resultSet.last();
             return resultSet.getRow();
         } catch (SQLException e) {
             exceptionWindow(e);
-        } finally{
+        } finally {
             try {
                 resultSet.moveToCurrentRow();
             } catch (SQLException e) {
@@ -506,19 +515,20 @@ public class UI extends Application {
         return 0;
     }
 
-    /**Shows dialog, that informing user about conflict while data editing.
-     *
+    /**
+     * Shows dialog, that informing user about conflict while data editing.
+     * <p>
      * This dialog should be used to show user, that changing 1 cell can affect to all same cells.
      * Dialog allows user to set cell number, tht he want to change (if only one).
      *
-     * @param codes  List, that contains unique codes of elements, that can be changed
+     * @param codes     List, that contains unique codes of elements, that can be changed
      * @param rowAmount Amount of rows, that potential would be affected.
      * @return String {@code getSelectedItem()}
      */
-    private String showConflictDialog(List<String> codes, int rowAmount){
-         ChoiceDialog<String> dialog = new ChoiceDialog<>();
+    private String showConflictDialog(List<String> codes, int rowAmount) {
+        ChoiceDialog<String> dialog = new ChoiceDialog<>();
         dialog.setTitle("Possible conflict");
-        dialog.setHeaderText("Changing of this cell can affect on "+rowAmount+" rows");
+        dialog.setHeaderText("Changing of this cell can affect on " + rowAmount + " rows");
         dialog.setContentText("Please, choose code number of element, that you want to change");
         dialog.getItems().addAll(codes);
         dialog.showAndWait();

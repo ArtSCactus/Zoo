@@ -87,7 +87,8 @@ public class Storage {
             // here will be DatabaseConnectionException
         }
         lastRequest = request;
-        Statement statement = connection.createStatement();
+        Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                ResultSet.CONCUR_UPDATABLE);
         ResultSet result = statement.executeQuery(request);
         currentLocalData = result;
         return result;
@@ -127,7 +128,8 @@ public class Storage {
         if (connection.isClosed()){
             // here will be DatabaseConnectionException
         }
-        Statement statement = connection.createStatement();
+        Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                ResultSet.CONCUR_UPDATABLE);
             return statement.executeQuery(statementRow);
     }
 
