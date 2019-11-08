@@ -79,8 +79,5 @@ public class Controller {
     public ResultSet executeAnonymousRequest(String statementRow) throws SQLException {
         return database.executeAnonymousRequest(statementRow);
     }
-    public ResultSet executeScrollableAnonymousRequest(String statementRow) throws SQLException {
-        return database.executeAnonymousRequest_SCROLLABLE(statementRow);
-    }
 
 }

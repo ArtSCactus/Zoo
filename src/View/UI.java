@@ -337,7 +337,7 @@ public class UI extends Application {
                         String tableName = requestResult.getMetaData().getTableName(findColumnIndexInResultSet(requestResult,
                                 event.getTablePosition().getTableColumn()));
                         //Watching how much rows can be affected by editing this cell (getting this rows)
-                        ResultSet anonymousSet = controller.executeScrollableAnonymousRequest("select * from " + tableName +
+                        ResultSet anonymousSet = controller.executeAnonymousRequest("select * from " + tableName +
                                 " where " + col.getText() + " = \'" + event.getOldValue() + "\'");
                         anonymousSet.last();
                         //counting it
