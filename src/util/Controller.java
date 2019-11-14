@@ -51,33 +51,37 @@ public class Controller {
         this.password = password;
     }
 
+    public ResultSet getCurrentLocalData() {
+        return database.getCurrentLocalData();
+    }
+
+    public String getLastRequest() {
+        return database.getLastRequest();
+    }
+
     public boolean connect() throws SQLException, DriverNotFoundException {
         database.connect(url, username, password);
         return true;
     }
 
-    public boolean disconnect() throws SQLException {
+    public void disconnect() throws SQLException {
         database.disconnect();
-        return true;
     }
 
     public ResultSet executeRequest(String request) throws SQLException {
         return database.executeRequest(request);
     }
 
-    public int executeUpdate(String statementLine) throws SQLException {
-       return database.executeUpdate(statementLine);
-    }
-
-    public ResultSet getCurrentLocalData(){
-        return database.getCurrentLocalData();
-    }
-
-    public String getLastRequest(){
-        return database.getLastRequest();
-    }
     public ResultSet executeAnonymousRequest(String statementRow) throws SQLException {
         return database.executeAnonymousRequest(statementRow);
+    }
+
+    public int executeUpdate(String statementLine) throws SQLException {
+        return database.executeUpdate(statementLine);
+    }
+
+    public void executeInsert(String statementLine) throws SQLException {
+        database.executeInsert(statementLine);
     }
 
 }

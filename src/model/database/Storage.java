@@ -9,6 +9,7 @@ public class Storage {
     private ResultSet currentLocalData;
     private String lastRequest;
     private String lastUpdate;
+    private String lastInsert;
 
     public Storage() {
     }
@@ -89,6 +90,24 @@ public class Storage {
         currentLocalData = result;
         return result;
     }
+    /**
+     * Executes request, without saving last ResultSet and statementRow.
+     *
+     * @param statementRow sql request
+     * @return ResultSet
+     * @throws SQLException
+     */
+    public ResultSet executeAnonymousRequest(String statementRow) throws SQLException {
+        if (statementRow == null) {
+            throw new NullPointerException("Cannot execute null statement");
+        }
+        if (connection.isClosed()) {
+            // here will be DatabaseConnectionException
+        }
+        Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                ResultSet.CONCUR_UPDATABLE);
+        return statement.executeQuery(statementRow);
+    }
 
     /**
      * Should be used only to build or change table.
@@ -111,22 +130,17 @@ public class Storage {
         }
     }
 
-    /**
-     * Executes request, without saving last ResultSet and statementRow.
-     *
-     * @param statementRow sql request
-     * @return ResultSet
-     * @throws SQLException
-     */
-    public ResultSet executeAnonymousRequest(String statementRow) throws SQLException {
+    public void executeInsert(String statementRow) throws SQLException {
         if (statementRow == null) {
             throw new NullPointerException("Cannot execute null statement");
         }
         if (connection.isClosed()) {
             // here will be DatabaseConnectionException
         }
-        Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
-                ResultSet.CONCUR_UPDATABLE);
-        return statement.executeQuery(statementRow);
-    }
+        lastInsert = statementRow;
+        Statement statement = connection.createStatement();
+        statement.execute(statementRow);
+        statement.close();
+        }
+
 }

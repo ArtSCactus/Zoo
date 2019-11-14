@@ -4,25 +4,24 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.*;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.Callback;
+import org.apache.commons.collections4.BidiMap;
+import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import util.Controller;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class TableComponent {
     private ObservableList tableData;
     private TableView<ObservableList> table;
     private ContextMenu contextMenu;
     private List<String> columnSystemNames;
+    private BidiMap<String, String> userFriendlyColumnNames;
 
     {
         table = new TableView<>();
@@ -33,6 +32,8 @@ public class TableComponent {
         table.setOnContextMenuRequested(event -> {
             contextMenu.show(table, event.getScreenX(), event.getScreenY());
         });
+        columnSystemNames = new ArrayList<>();
+        userFriendlyColumnNames = new DualHashBidiMap<>();
     }
 
     public TableComponent(ObservableList tableData, TableView<ObservableList> table) {
@@ -45,27 +46,40 @@ public class TableComponent {
         tableData = FXCollections.observableArrayList();
     }
 
+    public void addCustomColumnName(String systemName, String viewingName) {
+        if (systemName == null | viewingName == null) {
+            throw new NullPointerException("Cannot put null value to map");
+        }
+        userFriendlyColumnNames.put(systemName, viewingName);
+    }
+
+    private String translateNameForUser(String columnSystemName) {
+        return userFriendlyColumnNames.get(columnSystemName);
+    }
+
+    private String translateNameForSystem(String columnCustomName){
+       return userFriendlyColumnNames.getKey(columnCustomName);
+    }
+
+    private String getColumnSystemName(TableColumn column){
+       if(userFriendlyColumnNames.getKey(column.getText())==null){
+           return column.getText();
+       }else{
+           return userFriendlyColumnNames.getKey(column.getText());
+       }
+    }
+
     private void buildContextMenu() {
         contextMenu = new ContextMenu();
         MenuItem addRow = new MenuItem();
         addRow.setText("Add row");
-        addRow.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-               /* try {
-                    ObservableList<String> row = FXCollections.observableArrayList();
-                    for (int i = 1; i <= controller.getCurrentLocalData().getMetaData().getColumnCount(); i++) {
-                        //Iterate Column
-                        row.add("null");
-                    }
-                    tableData.add(row);
-                    // table.setItems(tableData);
-                } catch (SQLException e) {
-                    exceptionWindow(e);
-                }*/
-                //добавление null строки в таблицу
-                //формирование insert запроса.
-            }
+        addRow.setOnAction(event -> {
+            //Dialog handler here
+        });
+        MenuItem deleteRow = new MenuItem();
+        deleteRow.setText("Delete");
+        deleteRow.setOnAction(event -> {
+            //Dialog handler here
         });
         contextMenu.getItems().addAll(addRow);
     }
@@ -109,9 +123,20 @@ public class TableComponent {
      * @throws SQLException
      */
     private int findColumnIndexInResultSet(ResultSet resultSet, TableColumn column) throws SQLException {
-        for (int index = 1; index <= resultSet.getMetaData().getColumnCount(); index++) {
-            if (resultSet.getMetaData().getColumnLabel(index).equals(column.getText())) {
-                return index;
+        String columnCustomName=userFriendlyColumnNames.getKey(column.getText());
+        if (columnCustomName==null) {
+            for (int index = 1; index <= resultSet.getMetaData().getColumnCount(); index++) {
+
+                if (resultSet.getMetaData().getColumnLabel(index).equals(column.getText())) {
+                    return index;
+                }
+            }
+        } else {
+            for (int index = 1; index <= resultSet.getMetaData().getColumnCount(); index++) {
+
+                if (resultSet.getMetaData().getColumnLabel(index).equals(columnCustomName)) {
+                    return index;
+                }
             }
         }
         return -1;
@@ -131,16 +156,28 @@ public class TableComponent {
      */
     public void fillTable(ResultSet requestResult, Controller controller) throws SQLException {
         table.getColumns().clear();
+        columnSystemNames.clear();
         tableData = FXCollections.observableArrayList();
+        String columnName;
         //autofilling table by columns
         for (int index = 0; index < requestResult.getMetaData().getColumnCount(); index++) {
             final int j = index;
-            TableColumn col = new TableColumn(requestResult.getMetaData().getColumnName(index + 1));
+          //  columnSystemNames.add(requestResult.getMetaData().getColumnName(index + 1));
+            String temp =requestResult.getMetaData().getColumnName(index + 1);
+            columnName = translateNameForUser(temp)==null?
+                    temp :
+                    userFriendlyColumnNames.get(requestResult.getMetaData().getColumnName(index + 1));
+            TableColumn col = new TableColumn(columnName);
             col.setEditable(true);
             //dynamic filling columns
             col.setCellValueFactory(
-                    (Callback<TableColumn.CellDataFeatures<ObservableList, String>, ObservableValue<String>>)
-                            param -> new SimpleStringProperty(param.getValue().get(j).toString()));
+                    (Callback<TableColumn.CellDataFeatures<ObservableList, String>, ObservableValue<String>>) param -> {
+                        try {
+                            return new SimpleStringProperty(param.getValue().get(j).toString());
+                        } catch (NullPointerException e) {
+                            return new SimpleStringProperty("null");
+                        }
+                    });
             col.setCellFactory(TextFieldTableCell.forTableColumn());
             col.setOnEditCommit(new EventHandler<TableColumn.CellEditEvent>() {
                 @Override
@@ -150,7 +187,7 @@ public class TableComponent {
                                 event.getTablePosition().getTableColumn()));
                         //Watching how much rows can be affected by editing this cell (getting this rows)
                         ResultSet anonymousSet = controller.executeAnonymousRequest("select * from " + tableName +
-                                " where " + col.getText() + " = \'" + event.getOldValue() + "\'");
+                                " where " + getColumnSystemName(col) + " = \'" + event.getOldValue() + "\'");
                         anonymousSet.last();
                         //counting it
                         int rowAmount = anonymousSet.getRow();
@@ -171,24 +208,34 @@ public class TableComponent {
                                 updateTable(table, controller.getCurrentLocalData());
                             } else if (selectedCode.equals("Apply for all")) {// applying changes for all cells,
                                 // if user chose such option
-
                                 //Executing update for all founded matches
                                 controller.executeUpdate("update " +
-                                        tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
-                                        " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\';");
+                                        tableName + " set " + getColumnSystemName(col)
+                                        + " = " + "\'" + event.getNewValue() + "\'" +
+                                        " where " + getColumnSystemName(col)
+                                        + " = " + "\'" + event.getOldValue() + "\';");
                                 updateTable(table, controller.getLastRequest(), controller);
                             } else {
                                 //Executing custom update request to change only 1 cell
                                 controller.executeUpdate("update " +
-                                        tableName + " set " + col.getText() + " = " + "\'" + event.getNewValue() + "\'" +
-                                        " where " + col.getText() + " = " + "\'" + event.getOldValue() + "\' and " +
+                                        tableName + " set " + getColumnSystemName(col)
+                                        + " = " + "\'" + event.getNewValue() + "\'" +
+                                        " where " + getColumnSystemName(col)
+                                        + " = " + "\'" + event.getOldValue() + "\' and " +
                                         anonymousSet.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");
                                 updateTable(table, controller.getLastRequest(), controller);
-                            }
+                            }}else {
+                            controller.executeUpdate("update " +
+                                    tableName + " set " + getColumnSystemName(col)
+                                    + " = " + "\'" + event.getNewValue() + "\'" +
+                                    " where " + getColumnSystemName(col)
+                                    + " = " + "\'" + event.getOldValue() + "\';");
+                            updateTable(table, controller.getLastRequest(), controller);
                         }
                         //Adding data from sql request to ObservableList
                     } catch (SQLException e) {
-                        exceptionWindow(e);
+                       // exceptionWindow(e);
+                        e.printStackTrace();
                     }
                 }
             });
@@ -223,35 +270,11 @@ public class TableComponent {
     private void exceptionWindow(Exception e) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("" + e.getClass());
-        alert.setHeaderText(e.getClass().toString());
-        alert.setContentText(e.getMessage() + "\nStacktrace: " + e.getStackTrace().toString());
+        alert.setHeaderText(e.getMessage());
+        alert.setContentText(Arrays.toString(e.getStackTrace()));
         alert.showAndWait();
     }
 
-    /**
-     * Shows dialog, that informing user about conflict while data editing.
-     * <p>
-     * This dialog should be used to show user, that changing 1 cell can affect to all same cells.
-     * Dialog allows user to set cell number, that he want to change (Only one or all).
-     *
-     * @param codes     List, that contains unique codes of elements, that can be changed
-     * @param rowAmount Amount of rows, that potential would be affected.
-     * @return String {@code getSelectedItem()}
-     */
-    private String showConflictDialog(List<String> codes, int rowAmount) {
-        ChoiceDialog<String> dialog = new ChoiceDialog<>();
-        dialog.setTitle("Possible conflict");
-        dialog.setHeaderText("Changing of this cell can affect on " + rowAmount + " rows");
-        dialog.setContentText("Please, choose code number of element, that you want to change");
-        dialog.getItems().addAll(codes);
-        dialog.setSelectedItem(codes.get(codes.size() - 1));
-        Optional<String> result = dialog.showAndWait();
-        if (result.isPresent()) {
-            return dialog.getSelectedItem();
-        } else {
-            return null;
-        }
-    }
 
     private void updateTable(TableView table, String request, Controller controller) {
         ResultSet newSet = null;
@@ -312,4 +335,30 @@ public class TableComponent {
         }
         table.setItems(tableData);
     }
+
+    /**
+     * Shows dialog, that informing user about conflict while data editing.
+     * <p>
+     * This dialog should be used to show user, that changing 1 cell can affect to all same cells.
+     * Dialog allows user to set cell number, that he want to change (Only one or all).
+     *
+     * @param codes     List, that contains unique codes of elements, that can be changed
+     * @param rowAmount Amount of rows, that potential would be affected.
+     * @return String {@code getSelectedItem()}
+     */
+    private String showConflictDialog(List<String> codes, int rowAmount) {
+        ChoiceDialog<String> dialog = new ChoiceDialog<>();
+        dialog.setTitle("Possible conflict");
+        dialog.setHeaderText("Changing of this cell can affect on " + rowAmount + " rows");
+        dialog.setContentText("Please, choose code number of element, that you want to change");
+        dialog.getItems().addAll(codes);
+        dialog.setSelectedItem(codes.get(codes.size() - 1));
+        Optional<String> result = dialog.showAndWait();
+        if (result.isPresent()) {
+            return dialog.getSelectedItem();
+        } else {
+            return null;
+        }
+    }
+
 }
