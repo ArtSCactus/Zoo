@@ -20,7 +20,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 public class UI extends Application {
     private Controller controller;
@@ -29,8 +31,6 @@ public class UI extends Application {
     private Accordion dataDisplayAccordion;
     private TitledPane dataAddingPane;
     private Stage mainStage;
-    {
-    }
     public UI() {
         controller = new Controller();
     }
@@ -115,8 +115,16 @@ public class UI extends Application {
         mainMenuInterface.setPadding(new Insets(0, 0, 0, 0));
         buildDataDisplayAccordion();
         buildDataAddingMenu();
-        tableComponent = new TableComponent();
-
+        tableComponent = new TableComponent(controller);
+        tableComponent.addCustomColumnName("unique_number","Code number");
+        tableComponent.addCustomColumnName("name","Name");
+        tableComponent.addCustomColumnName("wintering", "Wintering code");
+        tableComponent.addCustomColumnName("sex","Gender");
+        tableComponent.addCustomColumnName("habitat", "Habitat zone");
+        tableComponent.addCustomColumnName("birthday","Birthday date");
+        tableComponent.addCustomColumnName("ration", "Ration");
+        tableComponent.addCustomColumnName("watcher","Watcher");
+        tableComponent.addCustomColumnName("veterinarian", "Veterinarian");
         MenuBar menuBar = new MenuBar();
         Menu options = new Menu("Options");
         Menu view = new Menu("View");
@@ -151,6 +159,7 @@ public class UI extends Application {
     private void buildDataDisplayAccordion() {
         dataDisplayAccordion = new Accordion();
         TitledPane animalTitledPane = new TitledPane();
+        animalTitledPane.setPadding(new Insets(0));
         animalTitledPane.setText("Animal");
 
         VBox animalContent = new VBox();
@@ -188,6 +197,7 @@ public class UI extends Application {
      */
     private void buildDataAddingMenu() {
         dataAddingPane = new TitledPane();
+        dataAddingPane.setPadding(new Insets(0));
         dataAddingPane.setText("Add new data");
         // Content for TitledPane
         VBox content = new VBox();
@@ -261,8 +271,10 @@ public class UI extends Application {
     private void exceptionWindow(Exception e) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("" + e.getClass());
-        alert.setHeaderText(e.getClass().toString());
-        alert.setContentText(e.getMessage() + "\nStacktrace: " + e.getStackTrace().toString());
+        alert.setHeaderText(e.getMessage());
+        TextArea stackTrace = new TextArea();
+        stackTrace.setText(Arrays.toString(e.getStackTrace()));
+        alert.getDialogPane().setContent(stackTrace);
         alert.showAndWait();
     }
 
@@ -287,11 +299,6 @@ public class UI extends Application {
         }
     }
 
-    private void buildChoiceBoxes(GridPane gridPane) {
-
-    }
-
-    //TODO: разбить на методы
     private void showAddBirdDialog() {
         Stage addBirdStage = new Stage();
         GridPane gridPane = new GridPane();

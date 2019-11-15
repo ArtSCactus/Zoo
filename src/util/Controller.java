@@ -3,6 +3,7 @@ package util;
 import exceptions.DriverNotFoundException;
 import model.database.Storage;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -82,6 +83,17 @@ public class Controller {
 
     public void executeInsert(String statementLine) throws SQLException {
         database.executeInsert(statementLine);
+    }
+
+    public void executeDelete(String statement) throws SQLException {
+        database.executeRemove(statement);
+    }
+
+    public Connection getConnection(){
+        return database.getConnection();
+    }
+    public String getLastRemove(){
+        return database.getLastRemove();
     }
 
 }

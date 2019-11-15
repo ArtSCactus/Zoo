@@ -10,6 +10,7 @@ public class Storage {
     private String lastRequest;
     private String lastUpdate;
     private String lastInsert;
+    private String lastRemove;
 
     public Storage() {
     }
@@ -67,6 +68,14 @@ public class Storage {
 
     public Connection getConnection() {
         return connection;
+    }
+
+    public String getLastInsert() {
+        return lastInsert;
+    }
+
+    public String getLastRemove() {
+        return lastRemove;
     }
 
     /**
@@ -141,6 +150,19 @@ public class Storage {
         Statement statement = connection.createStatement();
         statement.execute(statementRow);
         statement.close();
+        }
+
+        public void executeRemove(String statementRow) throws SQLException {
+        if (statementRow == null){
+            throw new NullPointerException("Cannot execute null statement");
+        }
+        if (connection.isClosed()){
+            // here will be DatabaseConnectionException
+        }
+            lastRemove = statementRow;
+            Statement statement = connection.createStatement();
+            statement.execute(statementRow);
+            statement.close();
         }
 
 }
