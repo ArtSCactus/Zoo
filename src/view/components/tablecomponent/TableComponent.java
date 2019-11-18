@@ -1,4 +1,4 @@
-package View;
+package view.components.tablecomponent;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
@@ -13,7 +13,6 @@ import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import util.Controller;
 
-import javax.xml.crypto.Data;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -362,7 +361,7 @@ public class TableComponent {
                             } while (anonymousSet.next());
                             codes.add("Apply for all");
                             String selectedCode;
-                            //Watching what user had chose
+                            //Watching what user has selected
                             selectedCode = showEditConflictDialog(codes, rowAmount);
                             if (selectedCode == null) {
                                 updateTable(table, controller.getCurrentLocalData());
@@ -399,7 +398,10 @@ public class TableComponent {
             });
             table.getColumns().addAll(col);
         }
+addDataFromResultSetToTable(requestResult);
+    }
 
+    private void addDataFromResultSetToTable(ResultSet requestResult) throws SQLException {
         //Adding data from sql request to ObservableList
         while (requestResult.next()) {
             //Iterate Row

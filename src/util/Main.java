@@ -1,6 +1,6 @@
 package util;
 
-import View.UI;
+import view.UI;
 
 
 public class Main {

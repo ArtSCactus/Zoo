@@ -106,6 +106,7 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="view.components.tablecomponent" />
       <recent name="util.factory" />
       <recent name="entity.animals" />
     </key>
@@ -243,16 +244,6 @@
           <url>file://$PROJECT_DIR$/src/model/database/Storage.java</url>
           <line>37</line>
           <option name="timeStamp" value="8" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/View/TableComponent.java</url>
-          <line>384</line>
-          <option name="timeStamp" value="11" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/View/TableComponent.java</url>
-          <line>96</line>
-          <option name="timeStamp" value="16" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
