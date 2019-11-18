@@ -375,12 +375,20 @@ public class TableComponent {
                                 updateTable(controller.getLastRequest(), controller);
                             } else {
                                 //Executing custom update request to change only 1 cell
-                                controller.executeUpdate("update " +
-                                        tableName + " set " + columnName
+                                /*controller.executeUpdate("update " +
+                                        tableName + " set " + columnName  // temporary disabled due to testing with prepared statement
                                         + " = " + "\'" + event.getNewValue() + "\'" +
                                         " where " + columnName
                                         + " = " + "\'" + event.getOldValue() + "\' and " +
-                                        anonymousSet.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");
+                                        anonymousSet.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");*/
+                                List<? super  Object> value = new ArrayList<>();
+                                value.add(columnName);
+                                value.add(event.getNewValue());
+                                value.add(columnName);
+                                value.add(event.getOldValue());
+                                value.add(anonymousSet.getMetaData().getColumnName(1));
+                                value.add(selectedCode);
+                                controller.executePreparedUpdate("update ? set ? = ? where ? =  ? and ?=?", value);
                                 updateTable(controller.getLastRequest(), controller);
                             }
                         } else {

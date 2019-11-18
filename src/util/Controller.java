@@ -6,6 +6,7 @@ import model.database.Storage;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
 public class Controller {
     private Storage database;
@@ -79,6 +80,10 @@ public class Controller {
 
     public int executeUpdate(String statementLine) throws SQLException {
         return database.executeUpdate(statementLine);
+    }
+
+    public int executePreparedUpdate(String statement, List<? super Object> arguments) throws SQLException {
+        return database.executePreparedUpdate(statement, arguments);
     }
 
     public void executeInsert(String statementLine) throws SQLException {

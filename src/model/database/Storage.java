@@ -1,8 +1,10 @@
 package model.database;
 
 import exceptions.DriverNotFoundException;
+import sun.net.www.content.text.Generic;
 
 import java.sql.*;
+import java.util.List;
 
 public class Storage {
     private Connection connection;
@@ -139,6 +141,21 @@ public class Storage {
         }
     }
 
+    public int executePreparedUpdate(String updateRequest, List<? super Object> array) throws SQLException {
+        if (updateRequest==null){
+            throw new NullPointerException("Cannot execute null statement");
+        }
+        if (connection.isClosed()) {
+            // here will be DatabaseConnectionException
+        }
+        try(PreparedStatement statement=connection.prepareStatement(updateRequest)){
+            for(int index=1; index<array.size(); index++){
+                statement.setObject(index, array.get(index-1));
+            }
+            return statement.executeUpdate();
+        }
+    }
+//TODO: добавить в execute PreparedStatement
     public void executeInsert(String statementRow) throws SQLException {
         if (statementRow == null) {
             throw new NullPointerException("Cannot execute null statement");

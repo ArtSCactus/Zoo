@@ -58,8 +58,8 @@ public class UI extends Application {
                     "Please, install JDBC:PostgreSQL driver or postgreSQL editor (pgAdmin).");
             return;
         }
-        loginWindow(stage); //- temporary disabled due to developing period
-        //runMainWindow();
+        //loginWindow(stage); //- temporary disabled due to developing period
+        runMainWindow();
     }
 
 
@@ -138,8 +138,6 @@ public class UI extends Application {
         tableComponent.addCustomColumnName("hibernation_beginning", "Beginning of hibernation");
         tableComponent.addCustomColumnName("hibernation_end", "End of hibernation");
         tableComponent.addCustomColumnName("normal_temperature", "Normal temperature");
-
-
     }
 
     /**
@@ -483,6 +481,7 @@ public class UI extends Application {
     private void runMainWindow() {
         buildMainMenu();
         Scene scene = new Scene(mainMenuInterface, 700, 700);
+        mainStage.setTitle("Zoo");
         mainStage.setScene(scene);
         mainStage.setOnCloseRequest(event -> {
             try {
