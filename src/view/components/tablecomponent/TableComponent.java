@@ -345,8 +345,10 @@ public class TableComponent {
                                 event.getTablePosition().getTableColumn()));
                         String columnName = getColumnSystemName(col);
                         //Watching how much rows can be affected by editing this cell (getting this rows)
-                        ResultSet anonymousSet = controller.executeAnonymousRequest("select * from " + tableName +
-                                " where " + columnName + " = \'" + event.getOldValue() + "\'");
+                        List<String> anonymousValues = new ArrayList<>();
+                        anonymousValues.add(event.getOldValue().toString());
+                        ResultSet anonymousSet = controller.executePreparedAnonymousRequest("select * from " + tableName +
+                                " where " + columnName + " = ?",anonymousValues);
                         anonymousSet.last();
                         //counting it
                         int rowAmount = anonymousSet.getRow();
@@ -367,11 +369,17 @@ public class TableComponent {
                                 updateTable(table, controller.getCurrentLocalData());
                             } else if (selectedCode.equals("Apply for all")) {// applying changes for all cells,
                                 //Executing update for all founded matches
-                                controller.executeUpdate("update " +
+                               /* controller.executeUpdate("update " +
                                         tableName + " set " + columnName
                                         + " = " + "\'" + event.getNewValue() + "\'" +
                                         " where " + columnName
-                                        + " = " + "\'" + event.getOldValue() + "\';");
+                                        + " = " + "\'" + event.getOldValue() + "\';");*/
+                                List<String> values = new ArrayList<>();
+                                values.add(event.getNewValue().toString());
+                                values.add(event.getOldValue().toString());
+                                controller.executePreparedUpdate("update " +
+                                        tableName + " set " + columnName
+                                        + " =  ? where " + columnName+ " = ?;",values);
                                 updateTable(controller.getLastRequest(), controller);
                             } else {
                                 //Executing custom update request to change only 1 cell
@@ -381,22 +389,26 @@ public class TableComponent {
                                         " where " + columnName
                                         + " = " + "\'" + event.getOldValue() + "\' and " +
                                         anonymousSet.getMetaData().getColumnName(1) + "=" + "\'" + selectedCode + "\'");*/
-                                List<? super  Object> value = new ArrayList<>();
-                                value.add(columnName);
-                                value.add(event.getNewValue());
-                                value.add(columnName);
-                                value.add(event.getOldValue());
-                                value.add(anonymousSet.getMetaData().getColumnName(1));
-                                value.add(selectedCode);
-                                controller.executePreparedUpdate("update ? set ? = ? where ? =  ? and ?=?", value);
+                                List<String> values = new ArrayList<>();
+                                values.add(event.getNewValue().toString());
+                                values.add(event.getOldValue().toString());
+                                values.add(selectedCode);
+                                controller.executePreparedUpdate("update "+tableName+" set "+columnName+" = " +
+                                        "? where "+columnName+" =  ? and "+anonymousSet.getMetaData().getColumnName(1)+"=?", values);
                                 updateTable(controller.getLastRequest(), controller);
                             }
                         } else {
-                            controller.executeUpdate("update " +
+                            /*controller.executeUpdate("update " +
                                     tableName + " set " + columnName
                                     + " = " + "\'" + event.getNewValue() + "\'" +
                                     " where " + columnName
-                                    + " = " + "\'" + event.getOldValue() + "\';");
+                                    + " = " + "\'" + event.getOldValue() + "\';");*/
+                            List<String> values = new ArrayList<>();
+                            values.add(event.getNewValue().toString());
+                            values.add(event.getOldValue().toString());
+                            controller.executePreparedUpdate("update " +
+                                    tableName + " set " + columnName
+                                    + " =  ? where " + columnName+ " = ?;",values);
                             updateTable(controller.getLastRequest(), controller);
                         }
                     } catch (SQLException e) {
@@ -439,7 +451,6 @@ addDataFromResultSetToTable(requestResult);
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("" + e.getClass());
         alert.setHeaderText(e.getMessage());
-        alert.setContentText(Arrays.toString(e.getStackTrace()));
         alert.showAndWait();
     }
 

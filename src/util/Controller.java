@@ -78,11 +78,15 @@ public class Controller {
         return database.executeAnonymousRequest(statementRow);
     }
 
+    public ResultSet executePreparedAnonymousRequest(String statementRow, List<String> values) throws SQLException {
+        return database.executePreparedAnonymousRequest(statementRow, values);
+    }
+
     public int executeUpdate(String statementLine) throws SQLException {
         return database.executeUpdate(statementLine);
     }
 
-    public int executePreparedUpdate(String statement, List<? super Object> arguments) throws SQLException {
+    public int executePreparedUpdate(String statement, List<String> arguments) throws SQLException {
         return database.executePreparedUpdate(statement, arguments);
     }
 

@@ -115,9 +115,26 @@ public class Storage {
         if (connection.isClosed()) {
             // here will be DatabaseConnectionException
         }
-        Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+       try (Statement statement = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,
+                ResultSet.CONCUR_UPDATABLE)) {
+           return statement.executeQuery(statementRow);
+       }
+    }
+
+    public ResultSet executePreparedAnonymousRequest(String statementRow, List<String> values) throws SQLException{
+        if (statementRow == null) {
+            throw new NullPointerException("Cannot execute null statement");
+        }
+        if (connection.isClosed()) {
+            // here will be DatabaseConnectionException
+        }
+        PreparedStatement statement = connection.prepareStatement(statementRow,ResultSet.TYPE_SCROLL_SENSITIVE,
                 ResultSet.CONCUR_UPDATABLE);
-        return statement.executeQuery(statementRow);
+            for(int index=0; index<values.size(); index++){
+                statement.setString(index+1, values.get(index));
+            }
+            return statement.executeQuery();
+
     }
 
     /**
@@ -141,7 +158,7 @@ public class Storage {
         }
     }
 
-    public int executePreparedUpdate(String updateRequest, List<? super Object> array) throws SQLException {
+    public int executePreparedUpdate(String updateRequest, List<String> array) throws SQLException {
         if (updateRequest==null){
             throw new NullPointerException("Cannot execute null statement");
         }
@@ -149,8 +166,8 @@ public class Storage {
             // here will be DatabaseConnectionException
         }
         try(PreparedStatement statement=connection.prepareStatement(updateRequest)){
-            for(int index=1; index<array.size(); index++){
-                statement.setObject(index, array.get(index-1));
+            for(int index=0; index<array.size(); index++){
+                statement.setString(index+1, array.get(index));
             }
             return statement.executeUpdate();
         }
