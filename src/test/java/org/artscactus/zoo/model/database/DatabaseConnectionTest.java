@@ -1,6 +1,6 @@
-package model.database;
+package org.artscactus.zoo.model.database;
 
-import exceptions.DriverNotFoundException;
+import org.artscactus.zoo.exception.DriverNotFoundException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

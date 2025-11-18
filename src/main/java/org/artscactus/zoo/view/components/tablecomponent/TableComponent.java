@@ -1,4 +1,4 @@
-package view.components.tablecomponent;
+package org.artscactus.zoo.view.components.tablecomponent;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleStringProperty;
@@ -11,7 +11,7 @@ import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.util.Callback;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
-import util.Controller;
+import org.artscactus.zoo.controller.Controller;
 
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;

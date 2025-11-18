@@ -1,4 +1,4 @@
-package exceptions;
+package org.artscactus.zoo.exception;
 
 /**
  * Exception thrown when the PostgreSQL JDBC driver is not found.

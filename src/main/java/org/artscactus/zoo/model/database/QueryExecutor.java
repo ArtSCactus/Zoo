@@ -1,4 +1,4 @@
-package model.database;
+package org.artscactus.zoo.model.database;
 
 import java.sql.*;
 import java.util.List;

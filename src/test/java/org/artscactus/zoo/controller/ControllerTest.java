@@ -1,7 +1,7 @@
-package util;
+package org.artscactus.zoo.controller;
 
-import exceptions.DriverNotFoundException;
-import model.database.Storage;
+import org.artscactus.zoo.exception.DriverNotFoundException;
+import org.artscactus.zoo.model.database.Storage;
 import org.junit.Before;
 import org.junit.Test;
 

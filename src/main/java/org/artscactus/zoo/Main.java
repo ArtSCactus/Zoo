@@ -1,4 +1,6 @@
-import view.UI;
+package org.artscactus.zoo;
+
+import org.artscactus.zoo.view.UI;
 
 /**
  * Main entry point for the Zoo application.

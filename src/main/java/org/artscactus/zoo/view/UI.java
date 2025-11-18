@@ -1,6 +1,6 @@
-package view;
+package org.artscactus.zoo.view;
 
-import exceptions.DriverNotFoundException;
+import org.artscactus.zoo.exception.DriverNotFoundException;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
@@ -14,8 +14,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.postgresql.util.PSQLException;
-import util.Controller;
-import view.components.tablecomponent.TableComponent;
+import org.artscactus.zoo.controller.Controller;
+import org.artscactus.zoo.view.components.tablecomponent.TableComponent;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
