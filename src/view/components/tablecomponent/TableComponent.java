@@ -18,6 +18,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+/**
+ * Component for displaying and managing database tables in a JavaFX TableView.
+ * This class provides functionality for:
+ * <ul>
+ *   <li>Dynamic table population from SQL ResultSets</li>
+ *   <li>Editable cells with conflict resolution</li>
+ *   <li>Custom column name mapping for user-friendly display</li>
+ *   <li>Row deletion with primary key conflict handling</li>
+ *   <li>Context menu for common operations</li>
+ * </ul>
+ */
 public class TableComponent {
     private ObservableList tableData;
     private TableView<ObservableList> table;

@@ -26,11 +26,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/*Yes, I know that this code needs to be refactored. But the development deadlines have already gone beyond the scope,
-        and here the creation of the main menu components, each of which is interconnected, is mainly described here.
-        So you won’t especially push them into separate components, because get a mess with dependencies.
-        If you try to deal with decomposition, it will produce too many methods and extra variables.
-        Therefore, it was decided to leave everything as it is.*/
+/**
+ * Main User Interface class for the Zoo application.
+ * This JavaFX application provides a comprehensive interface for managing:
+ * <ul>
+ *   <li>Animals (birds, reptiles)</li>
+ *   <li>Employees (watchers, veterinarians)</li>
+ *   <li>Related data (rations, habitats, wintering information)</li>
+ * </ul>
+ * 
+ * <p>The UI includes:
+ * <ul>
+ *   <li>Data display accordion for viewing different datasets</li>
+ *   <li>Data adding menu for creating new records</li>
+ *   <li>Interactive table component for viewing and editing data</li>
+ *   <li>Dialog windows for data entry and conflict resolution</li>
+ * </ul>
+ * 
+ * <p><strong>Note:</strong> This class contains the main UI logic and could benefit from 
+ * further refactoring to extract dialog creation into separate classes for better 
+ * maintainability and testability.
+ */
 public class UI extends Application {
     private Controller controller;
     private BorderPane mainMenuInterface;
